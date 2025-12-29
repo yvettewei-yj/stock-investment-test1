@@ -3654,6 +3654,11 @@ const LearningModule = {
             </div>`;
         }
         
+        // 检查是否是新的数据结构（sections数组）
+        if (Array.isArray(data.sections)) {
+            return this.renderSectionsArray(number, section, data.sections);
+        }
+        
         const subsections = Object.keys(data);
         
         // 如果subsections为空，显示提示
@@ -3692,31 +3697,165 @@ const LearningModule = {
                     if (!subsection) {
                         return '';
                     }
-                    return `
-                        <div class="mb-8 last:mb-0">
-                            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-4">
-                                <h4 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
-                                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-                                    ${this.getSubsectionTitle(key)}
-                                </h4>
-                                <p class="text-lg text-gray-700 leading-relaxed">${subsection.summary || '暂无摘要'}</p>
-                            </div>
-
-                            ${subsection.points && subsection.points.length > 0 ? `
-                            <div class="space-y-3 mb-4">
-                                ${subsection.points.map(point => `
-                                    <div class="flex items-start">
-                                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
-                                        <p class="text-gray-700 flex-1">${point}</p>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            ` : ''}
-
-                            ${subsection.chart ? this.renderChart(subsection.chart) : ''}
-                        </div>
-                    `;
+                    return this.renderSubsection(key, subsection, index);
                 }).join('<div class="border-t border-gray-200 my-6"></div>')}
+            </div>
+        `;
+    },
+
+    renderSectionsArray(number, section, sections) {
+        // 渲染新的sections数组格式
+        return `
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mr-4">
+                        <span class="text-2xl font-bold text-white">${number}</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800">${section.title || '未知标题'}</h3>
+                        ${section.subtitle ? `<p class="text-gray-600">${section.subtitle}</p>` : ''}
+                    </div>
+                </div>
+
+                ${sections.map((subSection, index) => `
+                    <div class="mb-8 last:mb-0 ${index > 0 ? 'border-t border-gray-200 pt-8' : ''}">
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-4">
+                            <h4 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                                <span class="text-2xl mr-3">${subSection.title || ''}</span>
+                            </h4>
+                            <p class="text-lg text-gray-700 leading-relaxed mb-4">${subSection.content || ''}</p>
+                            
+                            ${subSection.tips && Array.isArray(subSection.tips) && subSection.tips.length > 0 ? `
+                                <div class="mt-4 space-y-2">
+                                    ${subSection.tips.map(tip => `
+                                        <div class="flex items-start bg-white/60 rounded-lg p-3">
+                                            <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3 flex-shrink-0"></i>
+                                            <p class="text-sm text-gray-700 flex-1">${tip}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.points && Array.isArray(subSection.points) && subSection.points.length > 0 ? `
+                                <div class="mt-4 space-y-2">
+                                    ${subSection.points.map(point => `
+                                        <div class="flex items-start">
+                                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 flex-shrink-0"></i>
+                                            <p class="text-gray-700 flex-1">${point}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.indicators && Array.isArray(subSection.indicators) && subSection.indicators.length > 0 ? `
+                                <div class="mt-4 space-y-4">
+                                    ${subSection.indicators.map(indicator => `
+                                        <div class="bg-white/60 rounded-lg p-4 border-l-4 border-blue-500">
+                                            <h5 class="font-bold text-gray-800 mb-2">${indicator.name}</h5>
+                                            <p class="text-sm text-gray-600 mb-2">${indicator.explanation}</p>
+                                            <p class="text-sm font-semibold text-blue-600">${indicator.value}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.metrics && Array.isArray(subSection.metrics) && subSection.metrics.length > 0 ? `
+                                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    ${subSection.metrics.map(metric => `
+                                        <div class="bg-white/60 rounded-lg p-4 border-l-4 border-green-500">
+                                            <h5 class="font-bold text-gray-800 mb-1">${metric.name}</h5>
+                                            <p class="text-sm text-gray-600 mb-1">${metric.value}</p>
+                                            <p class="text-xs text-gray-500">${metric.meaning}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.trends && Array.isArray(subSection.trends) && subSection.trends.length > 0 ? `
+                                <div class="mt-4 space-y-2">
+                                    ${subSection.trends.map(trend => `
+                                        <div class="flex items-start bg-white/60 rounded-lg p-3">
+                                            <i class="fas fa-arrow-up text-green-500 mt-1 mr-3 flex-shrink-0"></i>
+                                            <p class="text-gray-700 flex-1">${trend}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.reasons && Array.isArray(subSection.reasons) && subSection.reasons.length > 0 ? `
+                                <div class="mt-4 space-y-2">
+                                    ${subSection.reasons.map(reason => `
+                                        <div class="flex items-start">
+                                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 flex-shrink-0"></i>
+                                            <p class="text-gray-700 flex-1">${reason}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${subSection.warning ? `
+                                    <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                                        <p class="text-yellow-800 text-sm">${subSection.warning}</p>
+                                    </div>
+                                ` : ''}
+                            ` : ''}
+                            
+                            ${subSection.strategies && Array.isArray(subSection.strategies) && subSection.strategies.length > 0 ? `
+                                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    ${subSection.strategies.map(strategy => `
+                                        <div class="bg-white/60 rounded-lg p-5 border-2 border-purple-200 hover:border-purple-400 transition-all">
+                                            <div class="text-3xl mb-3">${strategy.icon || '📋'}</div>
+                                            <h5 class="font-bold text-gray-800 mb-2">${strategy.title}</h5>
+                                            <p class="text-sm text-gray-600">${strategy.content}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${subSection.risks && Array.isArray(subSection.risks) && subSection.risks.length > 0 ? `
+                                <div class="mt-4 space-y-2">
+                                    ${subSection.risks.map(risk => `
+                                        <div class="flex items-start bg-red-50 rounded-lg p-3 border-l-4 border-red-400">
+                                            <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3 flex-shrink-0"></i>
+                                            <p class="text-red-700 flex-1">${risk}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${subSection.advice ? `
+                                    <div class="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                                        <p class="text-blue-800 text-sm">${subSection.advice}</p>
+                                    </div>
+                                ` : ''}
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    },
+
+    renderSubsection(key, subsection, index) {
+        // 渲染单个子板块
+        return `
+            <div class="mb-8 last:mb-0">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-4">
+                    <h4 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        ${this.getSubsectionTitle(key)}
+                    </h4>
+                    <p class="text-lg text-gray-700 leading-relaxed">${subsection.summary || '暂无摘要'}</p>
+                </div>
+
+                ${subsection.points && subsection.points.length > 0 ? `
+                <div class="space-y-3 mb-4">
+                    ${subsection.points.map(point => `
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <p class="text-gray-700 flex-1">${point}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                ${subsection.chart ? this.renderChart(subsection.chart) : ''}
             </div>
         `;
     },
