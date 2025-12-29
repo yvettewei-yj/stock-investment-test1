@@ -20,16 +20,32 @@ module.exports = function handler(req, res) {
   const userId = req.query.user_id || '1';
 
   // 返回吉祥物状态（默认值）
+  const stages = ['🥚', '🐣', '🐥', '🦆', '🦚'];
+  const stageNames = ['神秘蛋', '小财宝', '财宝宝', '小财神', '金凤凰'];
+  
+  const currentStage = 0; // 默认第一阶段
+  const exp = 0;
+  const expToNext = 100;
+
   res.status(200).json({
     success: true,
     user_id: userId,
     mascot: {
-      icon: '🥚',
-      level: 1,
-      name: '新手蛋',
-      exp: 0,
-      next_level_exp: 100
-    }
+      icon: stages[currentStage],
+      level: currentStage + 1,
+      name: stageNames[currentStage],
+      exp: exp,
+      exp_to_next: expToNext,
+      can_evolve: exp >= expToNext,
+      next_stage_icon: currentStage < stages.length - 1 ? stages[currentStage + 1] : null
+    },
+    messages: [
+      '今天也要好好学习哦～',
+      '答对题目我会很开心的！',
+      '快来和我玩吧～',
+      '连续签到可以让我成长！',
+      '完成学习任务可以获得经验值！'
+    ]
   });
 }
 

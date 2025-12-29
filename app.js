@@ -6946,11 +6946,11 @@ const GameCenter = {
             const response = await Utils.apiRequest(`/cards/collection?user_id=${AppState.userId}`);
             if (!response.success) return;
 
-            const { owned_count, total_count, by_rarity } = response;
+            const { owned_count = 0, total_count = 0, by_rarity = {} } = response;
             const progressEl = document.getElementById('cardProgressStats');
             if (!progressEl) return;
 
-            const progress = Math.round((owned_count / total_count) * 100);
+            const progress = total_count > 0 ? Math.round((owned_count / total_count) * 100) : 0;
             
             progressEl.innerHTML = `
                 <div class="text-center">
@@ -7023,7 +7023,7 @@ const CheckinModule = {
             const response = await Utils.apiRequest(`/checkin/status?user_id=${AppState.userId}`);
             if (!response.success) return;
 
-            const { already_checked, streak, total_days, calendar, rewards } = response;
+            const { already_checked = false, streak = 0, total_days = 0, calendar = [], rewards = [] } = response;
 
             container.innerHTML = `
                 <div class="text-center mb-8">
@@ -8535,8 +8535,13 @@ const MascotModule = {
         if (!float || !this.mascotData) return;
 
         float.classList.remove('hidden');
-        document.getElementById('mascotIcon').textContent = this.mascotData.icon;
-        document.getElementById('mascotName').textContent = this.mascotData.name;
+        const iconEl = document.getElementById('mascotIcon');
+        const nameEl = document.getElementById('mascotName');
+        const messageEl = document.getElementById('mascotMessage');
+        const expBarEl = document.getElementById('mascotExpBar');
+        
+        if (iconEl) iconEl.textContent = this.mascotData.icon || '🥚';
+        if (nameEl) nameEl.textContent = this.mascotData.name || '新手蛋';
         
         const messages = [
             "今天也要好好学习哦～",
@@ -8544,10 +8549,12 @@ const MascotModule = {
             "快来和我玩吧～",
             "连续签到可以让我成长！"
         ];
-        document.getElementById('mascotMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+        if (messageEl) messageEl.textContent = messages[Math.floor(Math.random() * messages.length)];
         
-        const expProgress = (this.mascotData.exp / this.mascotData.exp_to_next) * 100;
-        document.getElementById('mascotExpBar').style.width = Math.min(expProgress, 100) + '%';
+        if (expBarEl && this.mascotData.exp_to_next) {
+            const expProgress = ((this.mascotData.exp || 0) / this.mascotData.exp_to_next) * 100;
+            expBarEl.style.width = Math.min(expProgress, 100) + '%';
+        }
 
         // 点击打开详情
         float.onclick = () => this.show();
@@ -8566,7 +8573,7 @@ const MascotModule = {
             const response = await Utils.apiRequest(`/mascot/status?user_id=${AppState.userId}`);
             if (!response.success) return;
 
-            const { mascot, messages } = response;
+            const { mascot = {}, messages = [] } = response;
             this.mascotData = mascot;
 
             container.innerHTML = `
