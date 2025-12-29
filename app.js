@@ -1568,6 +1568,9 @@ const LearningModule = {
         // 获取当前难度，默认为simple
         const difficulty = this.currentDifficulty || 'simple';
 
+        // 计算学习统计
+        const learningStats = this.calculateLearningStats();
+
         try {
             // 完成学习，点亮图鉴（传递难度参数）
             const response = await Utils.apiRequest('/collection/complete', {
@@ -1581,81 +1584,233 @@ const LearningModule = {
 
             if (response && response.success) {
                 // 检查是否解锁了新难度
+                const difficultyNames = {
+                    'simple': '简单',
+                    'advanced': '进阶',
+                    'expert': '高级',
+                    'master': '大师'
+                };
+                
                 let unlockMessage = '';
                 if (response.newly_unlocked && response.next_difficulty) {
-                    const difficultyNames = {
-                        'simple': '简单',
-                        'advanced': '进阶',
-                        'expert': '高级',
-                        'master': '大师'
-                    };
                     unlockMessage = `🎊 恭喜！你已解锁${difficultyNames[response.next_difficulty] || response.next_difficulty}难度！`;
                 }
                 
                 Utils.showToast(unlockMessage || '🎉 恭喜完成学习！');
                 
                 // 显示完成页面
-                Utils.showPage('learning-page');
-                const learningContainer = document.getElementById('learningContainer');
-                if (learningContainer) {
-                    learningContainer.innerHTML = `
-                        <div class="bg-white rounded-xl shadow-xl p-8 text-center">
-                            <div class="mb-6">
-                                <div class="text-8xl mb-4">🎉</div>
-                                <h2 class="text-3xl font-bold text-gray-800 mb-2">恭喜完成学习！</h2>
-                                <p class="text-gray-600 text-lg">你已经深入了解了 ${this.currentStock.name} 的投资价值</p>
-                                ${response.completed_difficulty ? `
-                                    <p class="text-purple-600 font-semibold mt-2">完成难度：${difficultyNames[response.completed_difficulty] || response.completed_difficulty}</p>
-                                ` : ''}
-                                ${response.newly_unlocked && response.next_difficulty ? `
-                                    <div class="mt-4 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl border-2 border-purple-300">
-                                        <p class="text-lg font-bold text-purple-800">🎊 解锁新难度！</p>
-                                        <p class="text-purple-600 mt-1">${difficultyNames[response.next_difficulty] || response.next_difficulty}难度已解锁，可以开始挑战了！</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            
-                            ${response.new_badges && response.new_badges.length > 0 ? `
-                                <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 mb-6">
-                                    <h3 class="text-xl font-bold text-gray-800 mb-4">🎖️ 获得新勋章</h3>
-                                    <div class="flex justify-center gap-4">
-                                        ${response.new_badges.map(badge => `
-                                            <div class="text-center">
-                                                <div class="text-4xl mb-2">${badge.icon || '🏆'}</div>
-                                                <p class="text-sm font-bold text-gray-700">${badge.name || '新勋章'}</p>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            <div class="flex gap-4">
-                                <button onclick="LearningModule.showLevelSelection()" 
-                                        class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-bold">
-                                    <i class="fas fa-redo mr-2"></i>重新学习
-                                </button>
-                                ${response.next_difficulty && response.newly_unlocked ? `
-                                    <button onclick="LearningModule.startLearningWithDifficulty('${response.next_difficulty}')" 
-                                            class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition font-bold">
-                                        <i class="fas fa-arrow-up mr-2"></i>挑战${difficultyNames[response.next_difficulty] || response.next_difficulty}难度
-                                    </button>
-                                ` : ''}
-                                <button onclick="QuizModule.startQuiz(${this.currentStock.id}, 0)" 
-                                        class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg transition font-bold">
-                                    <i class="fas fa-question-circle mr-2"></i>开始答题
-                                </button>
-                                <button onclick="ReportModule.generateReport()" 
-                                        class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg transition font-bold">
-                                    <i class="fas fa-chart-line mr-2"></i>查看报告
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
+                this.showLearningCompletePage(response, learningStats, difficultyNames);
+            } else {
+                // 即使API失败，也显示完成页面（使用本地统计）
+                this.showLearningCompletePage(null, learningStats, {
+                    'simple': '简单',
+                    'advanced': '进阶',
+                    'expert': '高级',
+                    'master': '大师'
+                });
             }
         } catch (error) {
             console.error('完成学习失败:', error);
-            Utils.showToast('操作失败，请重试');
+            // 即使API失败，也显示完成页面
+            this.showLearningCompletePage(null, learningStats, {
+                'simple': '简单',
+                'advanced': '进阶',
+                'expert': '高级',
+                'master': '大师'
+            });
+        }
+    },
+
+    calculateLearningStats() {
+        // 计算学习统计信息
+        const stats = {
+            totalSections: 5,
+            completedSections: 0,
+            totalQuizzes: 0,
+            correctQuizzes: 0,
+            averageAccuracy: 0,
+            totalPoints: 0,
+            sectionStats: {}
+        };
+
+        // 统计每个板块的答题情况
+        for (let i = 1; i <= 5; i++) {
+            if (this.sectionQuizAnswered && this.sectionQuizAnswered[i]) {
+                stats.completedSections++;
+                const quizzes = this.sectionQuizzes[i] || [];
+                const correctCount = this.sectionQuizCorrectCount?.[i] || 0;
+                stats.totalQuizzes += quizzes.length;
+                stats.correctQuizzes += correctCount;
+                
+                stats.sectionStats[i] = {
+                    total: quizzes.length,
+                    correct: correctCount,
+                    accuracy: quizzes.length > 0 ? Math.round((correctCount / quizzes.length) * 100) : 0
+                };
+            }
+        }
+
+        // 计算平均正确率
+        if (stats.totalQuizzes > 0) {
+            stats.averageAccuracy = Math.round((stats.correctQuizzes / stats.totalQuizzes) * 100);
+        }
+
+        // 计算总积分（每答对一题10分，每个板块完成额外奖励）
+        stats.totalPoints = stats.correctQuizzes * 10 + stats.completedSections * 20;
+
+        return stats;
+    },
+
+    showLearningCompletePage(response, learningStats, difficultyNames) {
+        Utils.showPage('learning-page');
+        const learningContainer = document.getElementById('learningContainer');
+        if (!learningContainer) return;
+
+        const difficulty = this.currentDifficulty || 'simple';
+        const hasUnlocked = response?.newly_unlocked && response.next_difficulty;
+        const hasBadges = response?.new_badges && response.new_badges.length > 0;
+
+        learningContainer.innerHTML = `
+            <!-- 完成动画背景 -->
+            <div class="fixed inset-0 bg-gradient-to-br from-purple-100 via-pink-100 to-yellow-100 opacity-50 -z-10"></div>
+            
+            <div class="max-w-4xl mx-auto">
+                <!-- 完成标题 -->
+                <div class="text-center mb-8 animate-fade-in">
+                    <div class="inline-block animate-bounce mb-4">
+                        <div class="text-9xl">🎉</div>
+                    </div>
+                    <h1 class="text-5xl font-bold text-gray-800 mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        恭喜完成学习！
+                    </h1>
+                    <p class="text-xl text-gray-600">你已经深入了解了 <span class="font-bold text-purple-600">${this.currentStock.name}</span> 的投资价值</p>
+                    ${response?.completed_difficulty ? `
+                        <div class="mt-4 inline-block px-6 py-2 bg-purple-100 rounded-full">
+                            <span class="text-purple-800 font-semibold">完成难度：${difficultyNames[response.completed_difficulty] || response.completed_difficulty}</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- 学习统计卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 mb-6 animate-slide-up">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-chart-bar text-purple-600 mr-3"></i>
+                        学习统计
+                    </h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                            <div class="text-3xl font-bold text-purple-600 mb-1">${learningStats.completedSections}/5</div>
+                            <div class="text-sm text-gray-600">完成板块</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
+                            <div class="text-3xl font-bold text-blue-600 mb-1">${learningStats.correctQuizzes}/${learningStats.totalQuizzes}</div>
+                            <div class="text-sm text-gray-600">答对题目</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                            <div class="text-3xl font-bold text-green-600 mb-1">${learningStats.averageAccuracy}%</div>
+                            <div class="text-sm text-gray-600">平均正确率</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl">
+                            <div class="text-3xl font-bold text-yellow-600 mb-1">+${learningStats.totalPoints}</div>
+                            <div class="text-sm text-gray-600">获得积分</div>
+                        </div>
+                    </div>
+
+                    <!-- 各板块详细统计 -->
+                    <div class="space-y-3">
+                        <h3 class="text-lg font-bold text-gray-700 mb-3">各板块答题情况</h3>
+                        ${Object.keys(learningStats.sectionStats).map(sectionNum => {
+                            const sectionStat = learningStats.sectionStats[sectionNum];
+                            const sectionNames = {
+                                1: '问题解读',
+                                2: '公司基本情况',
+                                3: '公司经营情况',
+                                4: '投资性价比',
+                                5: '投资攻略'
+                            };
+                            const isExcellent = sectionStat.accuracy >= 80;
+                            return `
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <span class="font-medium text-gray-700">${sectionNames[sectionNum] || `板块${sectionNum}`}</span>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-sm text-gray-600">${sectionStat.correct}/${sectionStat.total}</span>
+                                        <div class="w-24 bg-gray-200 rounded-full h-2">
+                                            <div class="bg-gradient-to-r ${isExcellent ? 'from-green-500 to-emerald-500' : 'from-blue-500 to-cyan-500'} h-2 rounded-full transition-all duration-500" 
+                                                 style="width: ${sectionStat.accuracy}%"></div>
+                                        </div>
+                                        <span class="text-sm font-bold ${isExcellent ? 'text-green-600' : 'text-blue-600'} w-12 text-right">${sectionStat.accuracy}%</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- 解锁新难度提示 -->
+                ${hasUnlocked ? `
+                    <div class="bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 rounded-2xl p-6 mb-6 animate-pulse">
+                        <div class="flex items-center gap-4">
+                            <div class="text-5xl">🎊</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-purple-800 mb-1">解锁新难度！</h3>
+                                <p class="text-purple-600">${difficultyNames[response.next_difficulty] || response.next_difficulty}难度已解锁，可以开始挑战了！</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 获得勋章 -->
+                ${hasBadges ? `
+                    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="text-2xl mr-2">🎖️</span>
+                            获得新勋章
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            ${response.new_badges.map(badge => `
+                                <div class="text-center p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition">
+                                    <div class="text-5xl mb-2 animate-bounce">${badge.icon || '🏆'}</div>
+                                    <p class="text-sm font-bold text-gray-700">${badge.name || '新勋章'}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 操作按钮 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="LearningModule.showLevelSelection()" 
+                            class="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-bold text-lg flex items-center justify-center">
+                        <i class="fas fa-redo mr-2"></i>重新学习
+                    </button>
+                    ${hasUnlocked ? `
+                        <button onclick="LearningModule.startLearningWithDifficulty('${response.next_difficulty}')" 
+                                class="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition font-bold text-lg flex items-center justify-center">
+                            <i class="fas fa-arrow-up mr-2"></i>挑战${difficultyNames[response.next_difficulty] || response.next_difficulty}难度
+                        </button>
+                    ` : ''}
+                    <button onclick="QuizModule.startQuiz(${this.currentStock.id}, 0)" 
+                            class="px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg transition font-bold text-lg flex items-center justify-center">
+                        <i class="fas fa-question-circle mr-2"></i>开始答题测试
+                    </button>
+                    <button onclick="ReportModule.generateReport()" 
+                            class="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg transition font-bold text-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line mr-2"></i>查看投资画像
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // 触发庆祝效果
+        if (CheckinModule && CheckinModule.triggerConfetti) {
+            setTimeout(() => {
+                CheckinModule.triggerConfetti();
+            }, 500);
+        }
+
+        // 更新积分显示
+        if (typeof updatePointsDisplay === 'function') {
+            updatePointsDisplay();
         }
     },
 
@@ -3296,14 +3451,113 @@ const LearningModule = {
         const quizzes = this.sectionQuizzes[sectionNum] || [];
         
         if (this.sectionQuizIndex[sectionNum] >= quizzes.length) {
-            // 该板块答题完成，进入下一板块
+            // 该板块答题完成，显示完成提示并进入下一板块
             this.sectionQuizAnswered[sectionNum] = true;
-            this.currentSection = sectionNum + 1;
+            
+            // 计算该板块的答题正确率
+            const correctCount = this.sectionQuizCorrectCount?.[sectionNum] || 0;
+            const totalQuestions = quizzes.length;
+            const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+            
+            // 显示板块完成提示
+            this.showSectionComplete(sectionNum, accuracy, totalQuestions);
+            
+            // 延迟后进入下一板块
+            setTimeout(() => {
+                if (sectionNum < 5) {
+                    this.currentSection = sectionNum + 1;
+                    this.renderFullLearningFlow();
+                } else {
+                    // 所有板块完成，进入完成页面
+                    this.completeLearning();
+                }
+            }, 2000);
         } else {
             // 继续下一题
             this.currentSection = sectionNum + 0.5;
+            this.renderFullLearningFlow();
         }
-        this.renderFullLearningFlow();
+    },
+
+    showSectionComplete(sectionNum, accuracy, totalQuestions) {
+        // 显示板块完成提示
+        const sectionNames = {
+            1: '问题解读',
+            2: '公司基本情况',
+            3: '公司经营情况',
+            4: '投资性价比',
+            5: '投资攻略'
+        };
+        
+        const sectionName = sectionNames[sectionNum] || `板块${sectionNum}`;
+        const isExcellent = accuracy >= 80;
+        const isGood = accuracy >= 60;
+        
+        // 创建完成提示弹窗
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        overlay.id = 'sectionCompleteOverlay';
+        
+        overlay.innerHTML = `
+            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md mx-4 transform transition-all animate-scale-in">
+                <div class="text-center">
+                    <div class="text-6xl mb-4 animate-bounce">${isExcellent ? '🎉' : isGood ? '👍' : '✅'}</div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">${sectionName}完成！</h3>
+                    <div class="mb-6">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-3xl font-bold ${isExcellent ? 'text-green-600' : isGood ? 'text-blue-600' : 'text-gray-600'}">${accuracy}%</span>
+                            <span class="text-gray-600">正确率</span>
+                        </div>
+                        <p class="text-sm text-gray-500">答对 ${this.sectionQuizCorrectCount?.[sectionNum] || 0} / ${totalQuestions} 题</p>
+                    </div>
+                    
+                    ${isExcellent ? `
+                        <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
+                            <p class="text-green-800 font-semibold">🌟 优秀！继续保持！</p>
+                        </div>
+                    ` : isGood ? `
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-4">
+                            <p class="text-blue-800 font-semibold">👍 不错！继续加油！</p>
+                        </div>
+                    ` : `
+                        <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
+                            <p class="text-yellow-800 font-semibold">💪 继续努力，相信你会做得更好！</p>
+                        </div>
+                    `}
+                    
+                    ${sectionNum < 5 ? `
+                        <button onclick="document.getElementById('sectionCompleteOverlay').remove(); LearningModule.currentSection = ${sectionNum + 1}; LearningModule.renderFullLearningFlow();" 
+                                class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition font-bold">
+                            <i class="fas fa-arrow-right mr-2"></i>继续学习下一板块
+                        </button>
+                    ` : `
+                        <button onclick="document.getElementById('sectionCompleteOverlay').remove(); LearningModule.completeLearning();" 
+                                class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-lg transition font-bold">
+                            <i class="fas fa-trophy mr-2"></i>完成全部学习
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // 添加积分奖励
+        const pointsEarned = isExcellent ? 30 : isGood ? 20 : 10;
+        AppState.points = (AppState.points || 0) + pointsEarned;
+        AppState.todayPoints = (AppState.todayPoints || 0) + pointsEarned;
+        
+        // 显示积分奖励提示
+        setTimeout(() => {
+            Utils.showToast(`+${pointsEarned} 积分`, 2000);
+        }, 500);
+        
+        // 触发庆祝效果
+        if (isExcellent && CheckinModule && CheckinModule.triggerConfetti) {
+            setTimeout(() => {
+                CheckinModule.triggerConfetti();
+            }, 300);
+        }
     },
 
     // 答题函数
@@ -3314,6 +3568,14 @@ const LearningModule = {
 
         let isCorrect = false;
         const quizId = `quiz_${sectionNum}_${quizIndex}`;
+
+        // 初始化答题统计
+        if (!this.sectionQuizCorrectCount) {
+            this.sectionQuizCorrectCount = {};
+        }
+        if (!this.sectionQuizCorrectCount[sectionNum]) {
+            this.sectionQuizCorrectCount[sectionNum] = 0;
+        }
 
         if (quizType === 'single' || quizType === 'truefalse') {
             isCorrect = quiz.correct === answerIndex;
@@ -3326,8 +3588,14 @@ const LearningModule = {
                     if (index === answerIndex) {
                         if (isCorrect) {
                             optionEl.classList.add('bg-green-100', 'border-green-500');
+                            // 添加正确动画
+                            optionEl.classList.add('animate-pulse');
+                            setTimeout(() => optionEl.classList.remove('animate-pulse'), 1000);
                         } else {
                             optionEl.classList.add('bg-red-100', 'border-red-500');
+                            // 添加错误动画
+                            optionEl.classList.add('animate-shake');
+                            setTimeout(() => optionEl.classList.remove('animate-shake'), 500);
                         }
                     }
                     if (index === quiz.correct && !isCorrect) {
@@ -3335,6 +3603,39 @@ const LearningModule = {
                     }
                 }
             });
+        } else if (quizType === 'multiple') {
+            // 多选题：获取所有选中的选项
+            const selectedOptions = [];
+            quiz.options.forEach((option, index) => {
+                const optionEl = document.getElementById(`${quizId}_option_${index}`);
+                if (optionEl && optionEl.classList.contains('bg-blue-100')) {
+                    selectedOptions.push(index);
+                }
+            });
+            
+            // 检查答案是否正确（顺序无关）
+            const correctSet = new Set(quiz.correct);
+            const selectedSet = new Set(selectedOptions);
+            isCorrect = correctSet.size === selectedSet.size && 
+                       Array.from(correctSet).every(x => selectedSet.has(x));
+            
+            // 更新选项样式
+            quiz.options.forEach((option, index) => {
+                const optionEl = document.getElementById(`${quizId}_option_${index}`);
+                if (optionEl) {
+                    optionEl.disabled = true;
+                    if (correctSet.has(index)) {
+                        optionEl.classList.add('bg-green-100', 'border-green-500');
+                    } else if (selectedSet.has(index) && !correctSet.has(index)) {
+                        optionEl.classList.add('bg-red-100', 'border-red-500');
+                    }
+                }
+            });
+        }
+
+        // 更新答题统计
+        if (isCorrect) {
+            this.sectionQuizCorrectCount[sectionNum]++;
         }
 
         // 显示解释
