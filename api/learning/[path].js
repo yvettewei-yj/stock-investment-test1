@@ -14,15 +14,20 @@ module.exports = function handler(req, res) {
 
   try {
     // 从URL路径解析：/api/learning/questions -> questions
-    // 在Vercel中，动态路由参数通过req.query传递，键名是文件名（去掉方括号）
+    // 在Vercel Serverless Functions中，动态路由参数通过req.query传递
     // 对于 api/learning/[path].js，访问 /api/learning/questions 时
-    // path参数应该在 req.query.path 中
+    // path参数在 req.query.path 中（键名是文件名去掉方括号）
     
     let path = null;
     
+    // 调试信息
+    console.log('[Learning API] req.url:', req.url);
+    console.log('[Learning API] req.query:', JSON.stringify(req.query));
+    
     // 方法1: 尝试从req.query.path获取（Vercel标准方式）
-    // 注意：req.query可能是undefined，需要检查
-    if (req.query && typeof req.query === 'object' && req.query.path) {
+    if (req.query && typeof req.query === 'object') {
+      // Vercel会将动态路由参数放在req.query中，键名是文件名（去掉方括号）
+      // 对于 [path].js，参数在 req.query.path
       path = req.query.path;
     }
     
@@ -31,18 +36,24 @@ module.exports = function handler(req, res) {
       const urlPath = req.url.split('?')[0]; // 去掉查询参数
       const parts = urlPath.split('/').filter(p => p); // 分割并过滤空字符串
       
+      console.log('[Learning API] URL parts:', parts);
+      
       // URL格式可能是：/api/learning/questions 或 /learning/questions
       // 查找 'learning' 的位置，下一个部分就是path
       const learningIndex = parts.indexOf('learning');
       if (learningIndex >= 0 && learningIndex < parts.length - 1) {
         path = parts[learningIndex + 1];
+        console.log('[Learning API] Found path from URL:', path);
       }
     }
     
     // 方法3: 如果还是找不到，使用默认值
     if (!path) {
       path = 'questions';
+      console.log('[Learning API] Using default path:', path);
     }
+    
+    console.log('[Learning API] Final path:', path);
     
     const stockId = (req.query && req.query.stock_id) || '1';
     const userId = (req.query && req.query.user_id) || '1';
