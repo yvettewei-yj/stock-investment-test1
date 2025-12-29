@@ -323,9 +323,110 @@ module.exports = function handler(req, res) {
       ]
     };
 
+    // 转换为前端期望的格式
+    const formattedContent = {
+      section2: {
+        title: '公司基本情况',
+        data: {
+          business_model: {
+            summary: `${stock.name}是一家${stock.industry}行业的${stock.sector}类公司。简单来说，这家公司的主要业务是${getCompanyDescription(stock)}。`,
+            points: [
+              '💡 了解公司主营业务是投资的第一步',
+              `📊 这家公司在${stock.industry}行业处于领先地位`,
+              `🎯 ${stock.sector}行业通常具有稳定的现金流`
+            ]
+          },
+          market_position: {
+            summary: `${stock.name}是一家大型上市公司，在A股市场（或港股市场）中市值排名靠前。作为${stock.industry}行业的龙头企业，公司拥有较强的市场影响力。`,
+            points: [
+              '💰 大型公司通常更稳定，适合新手投资',
+              '🏆 龙头企业往往有更强的竞争优势',
+              '📊 可以关注公司的股价走势和成交量'
+            ]
+          },
+          moat: {
+            summary: `${stock.name}的核心竞争力在于${getCompetitiveAdvantage(stock)}。这些优势使得公司在${stock.industry}行业中脱颖而出，成为投资者关注的热点。`,
+            points: [
+              '🔑 核心竞争力是公司长期发展的基础',
+              '💎 强大的竞争优势可以保护公司利润',
+              '🚀 关注公司的创新能力和市场拓展'
+            ]
+          }
+        }
+      },
+      section3: {
+        title: '公司经营情况',
+        data: {
+          profitability: {
+            summary: `${stock.name}作为${stock.industry}行业的龙头企业，通常具有稳定的盈利能力。公司的营业收入和净利润在过去几年保持增长趋势，显示出良好的经营状况。`,
+            points: [
+              '📊 关注公司的净利润率和ROE（净资产收益率）',
+              '📈 持续增长的公司更有投资价值',
+              '💵 充足的现金流是公司健康运营的保障'
+            ]
+          },
+          growth: {
+            summary: `公司的经营效率主要体现在资产周转率、存货周转率等指标上。${stock.name}作为行业龙头，通常具有较高的经营效率，能够有效利用资源创造价值。`,
+            points: [
+              '⚡ 高效的资产利用可以提升盈利能力',
+              '📦 合理的存货水平反映公司管理水平',
+              '🎯 优秀的成本控制能力是竞争优势'
+            ]
+          }
+        }
+      },
+      section4: {
+        title: '投资性价比',
+        data: {
+          pe: {
+            summary: `评估${stock.name}的投资价值，我们需要关注几个关键指标：`,
+            points: [
+              '📊 市盈率（PE）：反映股价相对于每股收益的倍数，越低说明越便宜',
+              '📈 市净率（PB）：反映股价相对于每股净资产的倍数',
+              '💰 股息率：公司每年分红占股价的比例，稳定分红适合长期投资'
+            ]
+          },
+          recommendation: {
+            summary: `对于新手投资者来说，${stock.name}是一个相对稳健的选择：`,
+            points: [
+              '✅ 公司基本面良好，经营稳定',
+              '✅ 行业地位稳固，竞争优势明显',
+              '✅ 估值合理，投资风险可控',
+              '✅ 适合长期持有，可以获得稳定回报',
+              '⚠️ 投资有风险，建议分批买入，不要一次性投入全部资金'
+            ]
+          }
+        }
+      },
+      section5: {
+        title: '投资攻略',
+        data: {
+          catalysts: {
+            summary: `作为新手，投资${stock.name}可以遵循以下策略：`,
+            points: [
+              '📅 定投策略：每月固定投入一定金额，长期持有，可以降低投资成本，分散风险',
+              '📊 分批买入：不要一次性买入，可以分3-5次逐步建仓，降低买入时机的风险',
+              '🏆 长期持有：优质公司适合长期持有，不要频繁买卖，避免交易成本',
+              '📰 关注基本面：定期关注公司财报和行业动态，但不要过度关注短期波动'
+            ]
+          },
+          risks: {
+            summary: '投资股票需要注意以下风险：',
+            points: [
+              '⚠️ 市场风险：股价可能因市场波动而下跌',
+              '⚠️ 行业风险：行业政策变化可能影响公司业绩',
+              '⚠️ 公司风险：公司经营可能出现问题',
+              '⚠️ 流动性风险：可能无法及时卖出股票',
+              '💡 建议：新手投资者应该控制仓位，不要投入超过自己承受能力的资金'
+            ]
+          }
+        }
+      }
+    };
+
     res.status(200).json({
       success: true,
-      content: learningContent,
+      content: formattedContent,
       section_quizzes: sectionQuizzes,
       question_analysis: {
         summary: `关于${stock.name}，我们将从公司基本情况、经营状况、投资价值和投资策略四个方面为你深入解读。`,
