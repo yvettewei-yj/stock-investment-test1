@@ -1,0 +1,97 @@
+// API: /api/learning
+// 合并的学习相关API端点
+
+module.exports = function handler(req, res) {
+  // 设置 CORS 头
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    // 从URL路径解析：/api/learning/questions -> questions
+    // Vercel会将路径参数放在req.query中
+    const path = req.query.path || 'questions';
+    const stockId = req.query.stock_id || '1';
+    const userId = req.query.user_id || '1';
+
+    // 根据路径分发到不同的处理逻辑
+    if (path === 'questions' || (!path && req.method === 'GET')) {
+      // GET /api/learning?path=questions
+      if (req.method !== 'GET') {
+        return res.status(405).json({ success: false, message: 'Method not allowed' });
+      }
+
+      const questions = [
+        { id: 1, title: '这家公司是做什么的？', desc: '想了解公司的基本业务和主营业务', hot: true },
+        { id: 2, title: '这家公司赚钱吗？', desc: '想了解公司的盈利能力和财务状况', hot: true },
+        { id: 3, title: '现在买入合适吗？', desc: '想了解当前的投资价值和买入时机', hot: true },
+        { id: 4, title: '这家公司有什么风险？', desc: '想了解投资这家公司可能面临的风险', hot: false },
+        { id: 5, title: '新手应该怎么投资？', desc: '想了解适合新手的投资策略和方法', hot: true },
+        { id: 6, title: '这家公司的竞争优势是什么？', desc: '想了解公司在行业中的竞争地位', hot: false },
+        { id: 7, title: '这家公司未来发展前景如何？', desc: '想了解公司的成长潜力和发展空间', hot: false },
+        { id: 8, title: '如何评估这家公司的投资价值？', desc: '想了解评估公司投资价值的方法和指标', hot: false }
+      ];
+
+      return res.status(200).json({ success: true, questions: questions });
+    }
+
+    if (path === 'hot-questions') {
+      // GET /api/learning?path=hot-questions
+      if (req.method !== 'GET') {
+        return res.status(405).json({ success: false, message: 'Method not allowed' });
+      }
+
+      const hotQuestions = [
+        { id: 1, title: '这家公司是做什么的？', desc: '想了解公司的基本业务和主营业务', hot: true },
+        { id: 2, title: '这家公司赚钱吗？', desc: '想了解公司的盈利能力和财务状况', hot: true },
+        { id: 3, title: '现在买入合适吗？', desc: '想了解当前的投资价值和买入时机', hot: true }
+      ];
+
+      return res.status(200).json({ success: true, questions: hotQuestions });
+    }
+
+    if (path === 'select-question') {
+      // POST /api/learning?path=select-question
+      if (req.method !== 'POST') {
+        return res.status(405).json({ success: false, message: 'Method not allowed' });
+      }
+
+      const { stock_id, question_id } = req.body || {};
+      console.log(`User ${userId} selected question ${question_id} for stock ${stock_id}`);
+
+      const selectedQuestion = { id: question_id, title: '示例问题', desc: '这是你选择的问题的详细描述。' };
+      return res.status(200).json({ success: true, message: 'Questions selected', question: selectedQuestion });
+    }
+
+    if (path === 'levels') {
+      // GET /api/learning?path=levels
+      if (req.method !== 'GET') {
+        return res.status(405).json({ success: false, message: 'Method not allowed' });
+      }
+
+      const levels = [
+        { id: 'simple', name: '简单模式', description: '适合新手，内容通俗易懂', icon: '🌱', color: 'from-green-400 to-emerald-500', unlocked: true, requiredCard: null },
+        { id: 'advanced', name: '进阶模式', description: '深入分析，适合有一定基础的投资者', icon: '🚀', color: 'from-blue-400 to-cyan-500', unlocked: false, requiredCard: 'simple_complete' },
+        { id: 'expert', name: '高级模式', description: '专业分析，适合经验丰富的投资者', icon: '💎', color: 'from-purple-400 to-pink-500', unlocked: false, requiredCard: 'advanced_complete' },
+        { id: 'master', name: '大师模式', description: '深度研究，适合专业投资者', icon: '👑', color: 'from-yellow-400 to-orange-500', unlocked: false, requiredCard: 'expert_complete' }
+      ];
+
+      return res.status(200).json({ success: true, levels: levels });
+    }
+
+    // 未知路径
+    return res.status(404).json({ success: false, message: 'Endpoint not found' });
+  } catch (error) {
+    console.error('Learning API error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'API error: ' + error.message
+    });
+  }
+};
+
