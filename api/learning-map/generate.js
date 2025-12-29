@@ -20,10 +20,47 @@ module.exports = async function handler(req, res) {
     const userId = req.query.user_id || '1';
     const likedStocks = req.body || [];
 
+    // 股票数据映射
+    const stockDataMap = {
+      '贵州茅台': { id: 1, name: '贵州茅台', code: '600519', sector: '消费', industry: '白酒' },
+      '宁德时代': { id: 2, name: '宁德时代', code: '300750', sector: '新能源', industry: '电池' },
+      '招商银行': { id: 3, name: '招商银行', code: '600036', sector: '金融', industry: '银行' },
+      '腾讯控股': { id: 4, name: '腾讯控股', code: '00700', sector: '科技', industry: '互联网' },
+      '中国平安': { id: 5, name: '中国平安', code: '601318', sector: '金融', industry: '保险' },
+      '比亚迪': { id: 6, name: '比亚迪', code: '002594', sector: '新能源', industry: '汽车' },
+      '美的集团': { id: 7, name: '美的集团', code: '000333', sector: '消费', industry: '家电' },
+      '隆基绿能': { id: 8, name: '隆基绿能', code: '601012', sector: '新能源', industry: '光伏' },
+      '五粮液': { id: 9, name: '五粮液', code: '000858', sector: '消费', industry: '白酒' },
+      '中国移动': { id: 10, name: '中国移动', code: '600941', sector: '通信', industry: '运营商' },
+      '药明康德': { id: 11, name: '药明康德', code: '603259', sector: '医药', industry: 'CRO' },
+      '海天味业': { id: 12, name: '海天味业', code: '603288', sector: '消费', industry: '食品' },
+      '立讯精密': { id: 13, name: '立讯精密', code: '002475', sector: '科技', industry: '电子' },
+      '万华化学': { id: 14, name: '万华化学', code: '600309', sector: '化工', industry: '化学' },
+      '长江电力': { id: 15, name: '长江电力', code: '600900', sector: '公用事业', industry: '电力' }
+    };
+
+    // 生成学习路径（path）
+    const path = likedStocks.map((stockName, index) => {
+      const stockInfo = stockDataMap[stockName] || { id: index + 1, name: stockName, sector: '其他', industry: '其他' };
+      return {
+        id: stockInfo.id,
+        name: stockInfo.name,
+        code: stockInfo.code,
+        sector: stockInfo.sector,
+        status: index === 0 ? 'current' : (index === 0 ? 'completed' : 'locked'),
+        is_today: index === 0,
+        stars: 0
+      };
+    });
+
     // 生成学习地图数据
     const learningMap = {
       user_id: userId,
       stocks: likedStocks,
+      path: path,
+      completed_stocks: 0,
+      total_stocks: likedStocks.length,
+      total_stars: 0,
       modules: [
         {
           id: 1,

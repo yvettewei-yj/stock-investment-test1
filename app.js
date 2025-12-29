@@ -9105,9 +9105,9 @@ const LearningMapModule = {
         const container = document.getElementById('learningMapContainer');
         if (!container || !this.learningMap) return;
 
-        const path = this.learningMap.path;
-        const completedCount = this.learningMap.completed_stocks;
-        const totalCount = this.learningMap.total_stocks;
+        const path = this.learningMap.path || [];
+        const completedCount = this.learningMap.completed_stocks || 0;
+        const totalCount = this.learningMap.total_stocks || 0;
 
         container.innerHTML = `
             <!-- 头部信息 -->
@@ -9164,6 +9164,14 @@ const LearningMapModule = {
 
     renderPath(path) {
         // 生成类似多邻国的横向滚动地图
+        if (!path || !Array.isArray(path) || path.length === 0) {
+            return `
+                <div class="text-center py-12">
+                    <p class="text-gray-500 text-lg">暂无学习路径，请先选择感兴趣的股票生成学习地图</p>
+                </div>
+            `;
+        }
+        
         let html = `
             <div class="learning-map-container" style="overflow-x: auto; overflow-y: hidden; padding: 40px 20px; -webkit-overflow-scrolling: touch;">
                 <div class="learning-path-horizontal" style="display: flex; align-items: center; gap: 40px; min-width: fit-content; padding: 20px 0;">
