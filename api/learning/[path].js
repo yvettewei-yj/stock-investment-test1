@@ -49,12 +49,13 @@ module.exports = function handler(req, res) {
 
     // 根据路径分发到不同的处理逻辑
     if (path === 'questions' || (!path && req.method === 'GET')) {
-      // GET /api/learning?path=questions
+      // GET /api/learning/questions
       if (req.method !== 'GET') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
 
-      const questions = [
+      // 根据stockId生成个性化问题（可以根据不同股票定制问题）
+      const baseQuestions = [
         { id: 1, title: '这家公司是做什么的？', desc: '想了解公司的基本业务和主营业务', hot: true },
         { id: 2, title: '这家公司赚钱吗？', desc: '想了解公司的盈利能力和财务状况', hot: true },
         { id: 3, title: '现在买入合适吗？', desc: '想了解当前的投资价值和买入时机', hot: true },
@@ -65,7 +66,7 @@ module.exports = function handler(req, res) {
         { id: 8, title: '如何评估这家公司的投资价值？', desc: '想了解评估公司投资价值的方法和指标', hot: false }
       ];
 
-      return res.status(200).json({ success: true, questions: questions });
+      return res.status(200).json({ success: true, questions: baseQuestions });
     }
 
     if (path === 'hot-questions') {
