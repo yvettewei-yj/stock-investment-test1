@@ -41,15 +41,20 @@ module.exports = async function handler(req, res) {
 
     // 生成学习路径（path）
     const path = likedStocks.map((stockName, index) => {
-      const stockInfo = stockDataMap[stockName] || { id: index + 1, name: stockName, sector: '其他', industry: '其他' };
+      const stockInfo = stockDataMap[stockName] || { id: index + 1, name: stockName, code: '000000', sector: '其他', industry: '其他' };
       return {
         id: stockInfo.id,
         name: stockInfo.name,
+        stock_name: stockInfo.name,  // 前端使用的字段名
         code: stockInfo.code,
+        stock_code: stockInfo.code,   // 前端使用的字段名
         sector: stockInfo.sector,
-        status: index === 0 ? 'current' : (index === 0 ? 'completed' : 'locked'),
+        industry: stockInfo.industry,
+        order: index + 1,             // 节点顺序编号
+        progress: index === 0 ? 0 : (index < 0 ? 100 : 0),  // 进度百分比
+        status: index === 0 ? 'current' : (index < 0 ? 'completed' : 'locked'),
         is_today: index === 0,
-        stars: 0
+        stars: index < 0 ? 3 : 0      // 已完成节点的星级
       };
     });
 
