@@ -1056,31 +1056,67 @@ const LearningModule = {
     sectionQuizIndex: {}, // 每个板块的答题索引
 
     async startLearning(stock) {
-        // 确保stock对象存在且有id属性
-        if (!stock || !stock.id) {
+        // 确保stock对象存在
+        if (!stock) {
             Utils.showToast('股票信息加载失败，请重试');
-            console.error('Invalid stock object:', stock);
+            console.error('Invalid stock object: stock is null or undefined');
             return;
         }
         
+        // 处理不同格式的stock对象
+        // 可能是 {id, name, code, sector, industry} 格式
+        // 也可能是 {stock_id, stock_name, stock_code, sector} 格式（从学习地图来的）
+        let normalizedStock = {...stock};
+        
+        // 统一字段名
+        if (normalizedStock.stock_id && !normalizedStock.id) {
+            normalizedStock.id = normalizedStock.stock_id;
+        }
+        if (normalizedStock.stock_name && !normalizedStock.name) {
+            normalizedStock.name = normalizedStock.stock_name;
+        }
+        if (normalizedStock.stock_code && !normalizedStock.code) {
+            normalizedStock.code = normalizedStock.stock_code;
+        }
+        
+        // 确保有id属性
+        if (!normalizedStock.id) {
+            // 尝试从AppState中查找
+            if (normalizedStock.name) {
+                const fullStock = AppState.stocks.find(s => s.name === normalizedStock.name);
+                if (fullStock) {
+                    normalizedStock = {...fullStock, ...normalizedStock};
+                } else {
+                    // 如果还是找不到，生成一个临时id
+                    normalizedStock.id = Date.now();
+                }
+            } else {
+                Utils.showToast('股票信息不完整，请重新选择');
+                console.error('Invalid stock object: missing id and name', normalizedStock);
+                return;
+            }
+        }
+        
         // 如果传入的stock对象不完整，从AppState中查找完整信息
-        if (!stock.sector || !stock.industry) {
-            const fullStock = AppState.stocks.find(s => s.id === stock.id);
+        if (!normalizedStock.sector || !normalizedStock.industry) {
+            const fullStock = AppState.stocks.find(s => s.id === normalizedStock.id || s.name === normalizedStock.name);
             if (fullStock) {
-                stock = {...fullStock};  // 创建副本避免引用问题
+                normalizedStock = {...fullStock, ...normalizedStock};  // 合并，保留传入的值
             } else {
                 // 如果找不到完整信息，使用默认值
-                stock = {
-                    ...stock,
-                    sector: stock.sector || '未知',
-                    industry: stock.industry || '未知',
-                    style: stock.style || 'balanced',
-                    risk: stock.risk || 'medium'
+                normalizedStock = {
+                    ...normalizedStock,
+                    sector: normalizedStock.sector || '未知',
+                    industry: normalizedStock.industry || '未知',
+                    style: normalizedStock.style || 'balanced',
+                    risk: normalizedStock.risk || 'medium',
+                    name: normalizedStock.name || normalizedStock.stock_name || '未知股票',
+                    code: normalizedStock.code || normalizedStock.stock_code || '000000'
                 };
             }
         }
         
-        this.currentStock = stock;
+        this.currentStock = normalizedStock;
         
         // 显示学习关卡选择页面
         await this.showLevelSelection();
