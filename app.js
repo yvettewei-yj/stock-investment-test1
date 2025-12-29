@@ -1869,29 +1869,42 @@ const LearningModule = {
 
         try {
             // 获取问题列表
-            console.log('Loading questions for stock:', this.currentStock);
-            const response = await Utils.apiRequest(`/learning/questions?stock_id=${this.currentStock.id}`);
+            console.log('[LearningModule] Loading questions for stock:', this.currentStock);
+            const stockId = this.currentStock?.id || '1';
+            const apiUrl = `/learning/questions?stock_id=${stockId}`;
+            console.log('[LearningModule] API URL:', apiUrl);
             
-            console.log('Questions API response:', response);
+            const response = await Utils.apiRequest(apiUrl);
+            
+            console.log('[LearningModule] Questions API response:', response);
             
             if (!response) {
                 Utils.showToast('加载问题失败：API无响应');
-                console.error('API response is null or undefined');
+                console.error('[LearningModule] API response is null or undefined');
+                return;
+            }
+            
+            // 处理非JSON响应（可能是错误页面）
+            if (typeof response === 'string') {
+                Utils.showToast('加载问题失败：服务器返回了非JSON响应');
+                console.error('[LearningModule] API returned string instead of JSON:', response.substring(0, 200));
                 return;
             }
             
             if (!response.success) {
                 Utils.showToast(response?.message || '加载问题失败');
-                console.error('API response success is false:', response);
+                console.error('[LearningModule] API response success is false:', response);
                 return;
             }
 
             const questions = response.questions || [];
             if (questions.length === 0) {
                 Utils.showToast('暂无问题数据');
-                console.warn('Questions array is empty');
+                console.warn('[LearningModule] Questions array is empty');
                 return;
             }
+            
+            console.log('[LearningModule] Loaded', questions.length, 'questions');
             
             const hotQuestions = questions.filter(q => q.hot !== false).slice(0, 5); // 显示前5个热门问题
             this.followOnQuestions = questions.filter(q => !hotQuestions.find(hq => hq.id === q.id)); // 剩余作为follow-on
@@ -5263,29 +5276,42 @@ const LevelModule = {
         
         // 获取问题列表
         try {
-            console.log('LevelModule: Loading questions for stock:', this.currentStock);
-            const response = await Utils.apiRequest(`/learning/questions?stock_id=${this.currentStock.id}`);
+            console.log('[LevelModule] Loading questions for stock:', this.currentStock);
+            const stockId = this.currentStock?.id || '1';
+            const apiUrl = `/learning/questions?stock_id=${stockId}`;
+            console.log('[LevelModule] API URL:', apiUrl);
             
-            console.log('LevelModule: Questions API response:', response);
+            const response = await Utils.apiRequest(apiUrl);
+            
+            console.log('[LevelModule] Questions API response:', response);
             
             if (!response) {
                 Utils.showToast('加载问题失败：API无响应');
-                console.error('LevelModule: API response is null or undefined');
+                console.error('[LevelModule] API response is null or undefined');
+                return;
+            }
+            
+            // 处理非JSON响应（可能是错误页面）
+            if (typeof response === 'string') {
+                Utils.showToast('加载问题失败：服务器返回了非JSON响应');
+                console.error('[LevelModule] API returned string instead of JSON:', response.substring(0, 200));
                 return;
             }
             
             if (!response.success) {
                 Utils.showToast(response?.message || '加载问题失败');
-                console.error('LevelModule: API response success is false:', response);
+                console.error('[LevelModule] API response success is false:', response);
                 return;
             }
             
             const questions = response.questions || [];
             if (questions.length === 0) {
                 Utils.showToast('暂无问题数据');
-                console.warn('LevelModule: Questions array is empty');
+                console.warn('[LevelModule] Questions array is empty');
                 return;
             }
+            
+            console.log('[LevelModule] Loaded', questions.length, 'questions');
             
             reportContainer.innerHTML = `
                 <div class="bg-white rounded-2xl shadow-xl p-8 max-w-3xl mx-auto pop-in">
