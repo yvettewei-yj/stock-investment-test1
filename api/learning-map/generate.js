@@ -42,6 +42,11 @@ module.exports = async function handler(req, res) {
     // 生成学习路径（path）
     const path = likedStocks.map((stockName, index) => {
       const stockInfo = stockDataMap[stockName] || { id: index + 1, name: stockName, code: '000000', sector: '其他', industry: '其他' };
+      // 第一个节点是当前任务，其他节点锁定
+      const isCurrent = index === 0;
+      const isCompleted = false; // 可以根据实际完成情况设置
+      const isLocked = index > 0;
+      
       return {
         id: stockInfo.id,
         name: stockInfo.name,
@@ -51,10 +56,10 @@ module.exports = async function handler(req, res) {
         sector: stockInfo.sector,
         industry: stockInfo.industry,
         order: index + 1,             // 节点顺序编号
-        progress: index === 0 ? 0 : (index < 0 ? 100 : 0),  // 进度百分比
-        status: index === 0 ? 'current' : (index < 0 ? 'completed' : 'locked'),
-        is_today: index === 0,
-        stars: index < 0 ? 3 : 0      // 已完成节点的星级
+        progress: isCompleted ? 100 : (isCurrent ? 0 : 0),  // 进度百分比：已完成100%，当前0%，锁定0%
+        status: isCompleted ? 'completed' : (isCurrent ? 'current' : 'locked'),
+        is_today: isCurrent,
+        stars: isCompleted ? 3 : 0      // 已完成节点的星级
       };
     });
 
