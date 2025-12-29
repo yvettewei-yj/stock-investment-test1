@@ -1,0 +1,15 @@
+{
+  "name": "stock-investment-test",
+  "version": "1.0.0",
+  "description": "股票投资风格测试应用",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
+
