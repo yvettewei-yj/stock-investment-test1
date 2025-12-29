@@ -14,22 +14,24 @@ module.exports = function handler(req, res) {
 
   try {
     // 从URL路径解析：/api/learning/questions -> questions
-    // Vercel Serverless Functions中，动态路由参数通过req.query传递
-    // 对于 api/learning/[path].js，访问 /api/learning/questions 时，path参数在 req.query.path
-    // 但实际测试发现，Vercel可能使用不同的方式，我们需要从req.url中解析
+    // 在Vercel中，动态路由参数通过req.query传递，键名是文件名（去掉方括号）
+    // 对于 api/learning/[path].js，访问 /api/learning/questions 时
+    // path参数应该在 req.query.path 中
     
     let path = null;
     
     // 方法1: 尝试从req.query.path获取（Vercel标准方式）
-    if (req.query && req.query.path) {
+    // 注意：req.query可能是undefined，需要检查
+    if (req.query && typeof req.query === 'object' && req.query.path) {
       path = req.query.path;
     }
     
-    // 方法2: 从URL路径中解析
-    if (!path) {
+    // 方法2: 从URL路径中解析（备用方案）
+    if (!path && req.url) {
       const urlPath = req.url.split('?')[0]; // 去掉查询参数
       const parts = urlPath.split('/').filter(p => p); // 分割并过滤空字符串
       
+      // URL格式可能是：/api/learning/questions 或 /learning/questions
       // 查找 'learning' 的位置，下一个部分就是path
       const learningIndex = parts.indexOf('learning');
       if (learningIndex >= 0 && learningIndex < parts.length - 1) {
@@ -42,8 +44,8 @@ module.exports = function handler(req, res) {
       path = 'questions';
     }
     
-    const stockId = req.query.stock_id || '1';
-    const userId = req.query.user_id || '1';
+    const stockId = (req.query && req.query.stock_id) || '1';
+    const userId = (req.query && req.query.user_id) || '1';
 
     // 根据路径分发到不同的处理逻辑
     if (path === 'questions' || (!path && req.method === 'GET')) {
