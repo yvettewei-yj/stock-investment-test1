@@ -9488,18 +9488,25 @@ const LearningMapModule = {
     selectNode(index) {
         const node = this.learningMap.path[index];
         
+        if (!node) {
+            Utils.showToast('节点信息不存在');
+            return;
+        }
+        
         if (node.status === 'locked') {
             Utils.showToast('🔒 请先完成前面的学习');
             return;
         }
 
-        // 构造股票对象
+        // 构造股票对象，确保所有必要字段都存在
         const stock = {
-            id: node.stock_id,
-            name: node.stock_name,
-            code: node.stock_code,
-            sector: node.sector,
-            desc: node.desc
+            id: node.id || node.stock_id || index + 1,
+            name: node.stock_name || node.name || '未知股票',
+            code: node.stock_code || node.code || '000000',
+            sector: node.sector || '未知',
+            industry: node.industry || '未知',
+            style: 'balanced',
+            risk: 'medium'
         };
 
         // 开始学习
