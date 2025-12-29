@@ -6399,6 +6399,26 @@ const GameCenter = {
                 </div>
             </div>
 
+            <!-- 集卡进度统计 -->
+            <div id="cardProgressStats" class="grid grid-cols-4 gap-4 mb-6 bg-white rounded-2xl shadow-lg p-6">
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-blue-600">0</p>
+                    <p class="text-xs text-gray-600">已收集</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-gray-400">0</p>
+                    <p class="text-xs text-gray-600">待收集</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-purple-600">0%</p>
+                    <p class="text-xs text-gray-600">完成度</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-amber-600">0</p>
+                    <p class="text-xs text-gray-600">传说卡片</p>
+                </div>
+            </div>
+
             <!-- 功能入口网格 -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <!-- 每日签到 -->
