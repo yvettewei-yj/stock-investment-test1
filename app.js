@@ -7079,11 +7079,11 @@ const CheckinModule = {
                 <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">🎁 连续签到奖励</h3>
                     <div class="flex gap-4 overflow-x-auto pb-2">
-                        ${rewards.map((r, i) => `
+                        ${(rewards && Array.isArray(rewards) ? rewards : []).map((r, i) => `
                             <div class="flex-shrink-0 text-center p-4 rounded-xl ${r.claimed ? 'bg-green-100 border-2 border-green-400' : 'bg-gray-100 border-2 border-gray-300'}">
                                 <p class="text-3xl mb-2">${r.claimed ? '✅' : '🎁'}</p>
-                                <p class="font-bold text-gray-800">${r.day}天</p>
-                                <p class="text-sm text-gray-600">${r.reward}</p>
+                                <p class="font-bold text-gray-800">${r.day || 0}天</p>
+                                <p class="text-sm text-gray-600">${r.name || r.reward || '奖励'}</p>
                             </div>
                         `).join('')}
                     </div>
@@ -8599,6 +8599,16 @@ const MascotModule = {
             const { mascot = {}, messages = [] } = response;
             this.mascotData = mascot;
 
+            const defaultMessages = [
+                '今天也要好好学习哦～',
+                '答对题目我会很开心的！',
+                '快来和我玩吧～',
+                '连续签到可以让我成长！'
+            ];
+            const displayMessages = messages.length > 0 ? messages : defaultMessages;
+            const expToNext = mascot.exp_to_next || mascot.next_level_exp || 100;
+            const currentExp = mascot.exp || 0;
+
             container.innerHTML = `
                 <div class="text-center mb-8">
                     <h1 class="text-4xl font-bold text-gray-800 mb-4">
@@ -8618,11 +8628,11 @@ const MascotModule = {
                     <div class="max-w-xs mx-auto mt-6">
                         <div class="flex justify-between text-sm text-gray-600 mb-1">
                             <span>经验值</span>
-                            <span>${mascot.exp || 0} / ${mascot.exp_to_next || mascot.next_level_exp || 100}</span>
+                            <span>${currentExp} / ${expToNext}</span>
                         </div>
                         <div class="w-full bg-white rounded-full h-4 shadow-inner">
                             <div class="bg-gradient-to-r from-pink-400 to-rose-500 h-4 rounded-full transition-all duration-500" 
-                                 style="width: ${Math.min(((mascot.exp || 0) / (mascot.exp_to_next || mascot.next_level_exp || 100)) * 100, 100)}%"></div>
+                                 style="width: ${Math.min((currentExp / expToNext) * 100, 100)}%"></div>
                         </div>
                     </div>
 
