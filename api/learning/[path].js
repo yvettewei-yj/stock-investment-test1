@@ -18,16 +18,27 @@ module.exports = function handler(req, res) {
     // 对于 [path].js，参数会在 req.query.path 中
     // 如果不存在，则从URL中解析
     let path = req.query.path;
+    
+    // 调试日志
+    console.log('Learning API - req.url:', req.url);
+    console.log('Learning API - req.query:', req.query);
+    
     if (!path) {
       // 从URL中解析：/api/learning/questions -> questions
       const urlPath = req.url.split('?')[0];
       const parts = urlPath.split('/').filter(p => p);
+      console.log('Learning API - URL parts:', parts);
       if (parts.length >= 3 && parts[1] === 'learning') {
         path = parts[2];
+      } else if (parts.length >= 2 && parts[0] === 'learning') {
+        path = parts[1];
       } else {
         path = 'questions'; // 默认值
       }
     }
+    
+    console.log('Learning API - resolved path:', path);
+    
     const stockId = req.query.stock_id || '1';
     const userId = req.query.user_id || '1';
 
