@@ -50,7 +50,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'spin') {
-      // POST /api/wheel?path=spin
+      // POST /api/wheel/spin
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }

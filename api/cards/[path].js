@@ -97,7 +97,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'open-box') {
-      // POST /api/cards?path=open-box
+      // POST /api/cards/open-box
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
@@ -157,7 +157,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'compose') {
-      // POST /api/cards?path=compose
+      // POST /api/cards/compose
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }

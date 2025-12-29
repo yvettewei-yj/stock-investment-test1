@@ -68,12 +68,22 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'select-question') {
-      // POST /api/learning?path=select-question
+      // POST /api/learning/select-question
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
 
-      const { stock_id, question_id } = req.body || {};
+      // 解析POST请求体
+      let body = {};
+      if (req.body) {
+        try {
+          body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        } catch (e) {
+          body = req.body;
+        }
+      }
+
+      const { stock_id, question_id } = body;
       console.log(`User ${userId} selected question ${question_id} for stock ${stock_id}`);
 
       const selectedQuestion = { id: question_id, title: '示例问题', desc: '这是你选择的问题的详细描述。' };

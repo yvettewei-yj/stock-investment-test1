@@ -62,7 +62,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'feed') {
-      // POST /api/mascot?path=feed
+      // POST /api/mascot/feed
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
@@ -99,7 +99,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'evolve') {
-      // POST /api/mascot?path=evolve
+      // POST /api/mascot/evolve
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }

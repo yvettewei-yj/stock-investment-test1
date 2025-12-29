@@ -52,12 +52,22 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'submit') {
-      // POST /api/challenge?path=submit
+      // POST /api/challenge/submit
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
 
-      const { answers } = req.body;
+      // 解析POST请求体
+      let body = {};
+      if (req.body) {
+        try {
+          body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        } catch (e) {
+          body = req.body;
+        }
+      }
+
+      const { answers } = body;
       const correctAnswers = [3, 2, 1, 2, 1];
       let correctCount = 0;
       for (const qId in answers) {

@@ -80,7 +80,7 @@ module.exports = function handler(req, res) {
     }
 
     if (path === 'do') {
-      // POST /api/checkin?path=do
+      // POST /api/checkin/do
       if (req.method !== 'POST') {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
       }
