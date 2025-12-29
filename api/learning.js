@@ -14,20 +14,9 @@ module.exports = function handler(req, res) {
 
   try {
     // 从URL路径解析：/api/learning/questions -> questions
-    // Vercel会将动态路由参数放在req.query中，键名是文件名（去掉方括号）
-    // 对于 [path].js，参数会在 req.query.path 中
-    // 如果不存在，则从URL中解析
-    let path = req.query.path;
-    if (!path) {
-      // 从URL中解析：/api/learning/questions -> questions
-      const urlPath = req.url.split('?')[0];
-      const parts = urlPath.split('/').filter(p => p);
-      if (parts.length >= 3 && parts[1] === 'learning') {
-        path = parts[2];
-      } else {
-        path = 'questions'; // 默认值
-      }
-    }
+    const urlPath = req.url.split('?')[0];
+    const pathParts = urlPath.split('/').filter(p => p);
+    const path = pathParts.length > 2 ? pathParts[2] : (req.query.path || 'questions');
     const stockId = req.query.stock_id || '1';
     const userId = req.query.user_id || '1';
 

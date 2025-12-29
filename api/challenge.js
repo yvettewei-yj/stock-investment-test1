@@ -14,16 +14,9 @@ module.exports = function handler(req, res) {
 
   try {
     // 从URL路径解析：/api/challenge/start -> start
-    let path = req.query.path;
-    if (!path) {
-      const urlPath = req.url.split('?')[0];
-      const parts = urlPath.split('/').filter(p => p);
-      if (parts.length >= 3 && parts[1] === 'challenge') {
-        path = parts[2];
-      } else {
-        path = 'start';
-      }
-    }
+    const urlPath = req.url.split('?')[0];
+    const pathParts = urlPath.split('/').filter(p => p);
+    const path = pathParts.length > 2 ? pathParts[2] : (req.query.path || 'start');
     const userId = req.query.user_id || '1';
 
     if (path === 'start' || (!path && req.method === 'GET')) {
