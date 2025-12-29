@@ -6,7 +6,7 @@
   "installCommand": "echo 'Skipping install'",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
