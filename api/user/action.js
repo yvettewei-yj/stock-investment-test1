@@ -1,7 +1,7 @@
 // API: /api/user/action
 // 记录用户行为
 
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
