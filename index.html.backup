@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票投资风格测试 - 发现你的投资MBTI</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 min-h-screen">
+
+    <!-- 全局导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b-2 border-purple-200">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <!-- Logo/标题 -->
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl">📊</div>
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            投资风格测试
+                        </h1>
+                        <p class="text-xs text-gray-500">发现你的投资MBTI</p>
+                    </div>
+                </div>
+                
+                <!-- 导航按钮 -->
+                <div class="flex items-center gap-3">
+                    <!-- 游戏中心入口 - 突出显示 -->
+                    <button onclick="GameCenter.show()" 
+                            class="relative px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2 animate-pulse">
+                        <span class="text-2xl">🎮</span>
+                        <span>游戏中心</span>
+                        <!-- 新消息提示 -->
+                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white animate-bounce">
+                            !
+                        </span>
+                    </button>
+                    
+                    <!-- 积分显示 -->
+                    <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border-2 border-amber-200">
+                        <span class="text-amber-600 font-bold" id="navPoints">0</span>
+                        <span class="text-amber-600 text-sm">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 为导航栏留出空间 -->
+    <div style="height: 80px;"></div>
+
+    <!-- 规则说明弹窗 -->
+    <div id="ruleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style="display: flex;">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 relative animate-fade-in">
+            <button id="closeRuleModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="text-6xl mb-4">📊</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">发现你的投资风格</h2>
+                <p class="text-gray-600 text-lg">通过股票选择，了解你的投资MBTI</p>
+            </div>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex items-start bg-purple-50 p-4 rounded-lg">
+                    <div class="text-3xl mr-4">👉</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 mb-1">右滑表示感兴趣</h3>
+                        <p class="text-gray-600">向右滑动或拖拽卡片，表示你对这支股票感兴趣</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start bg-pink-50 p-4 rounded-lg">
+                    <div class="text-3xl mr-4">👈</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 mb-1">左滑表示不感兴趣</h3>
+                        <p class="text-gray-600">向左滑动或拖拽卡片，表示你对这支股票不感兴趣</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start bg-blue-50 p-4 rounded-lg">
+                    <div class="text-3xl mr-4">🎯</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 mb-1">完成15次选择</h3>
+                        <p class="text-gray-600">根据你的选择，我们将分析你的投资风格和偏好</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="startLearning" class="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition font-bold text-lg">
+                <i class="fas fa-rocket mr-2"></i>开始测试
+            </button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        
+        <!-- 滑动选股页面 -->
+        <div id="swipe-page" class="page">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                    <span class="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        选择你感兴趣的股票
+                    </span>
+                </h1>
+                <p class="text-gray-600 text-lg">左滑跳过，右滑选择</p>
+                
+                <!-- 进度条 -->
+                <div class="max-w-md mx-auto mt-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-600">完成进度</span>
+                        <span id="swipeProgress" class="text-sm font-bold text-purple-600">0 / 15</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div id="swipeProgressBar" class="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 卡片容器 -->
+            <div class="max-w-2xl mx-auto">
+                <div id="swipeCardContainer" class="relative" style="min-height: 400px;">
+                    <!-- 卡片将通过JS动态生成 -->
+                </div>
+                
+                <!-- 操作提示 -->
+                <div class="mt-8 flex justify-center gap-8">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-times text-red-500 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-600 text-sm">左滑跳过</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-heart text-green-500 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-600 text-sm">右滑选择</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报告页面 -->
+        <div id="report-page" class="page">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                    <span class="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        你的投资画像
+                    </span>
+                </h1>
+                <p class="text-gray-600 text-lg">基于你的选择，我们为你生成了专属的投资风格分析</p>
+            </div>
+            
+            <div id="reportContainer" class="max-w-4xl mx-auto">
+                <!-- 报告内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 学习页面 -->
+        <div id="learning-page" class="page">
+            <div id="learningContainer" class="max-w-4xl mx-auto px-4">
+                <!-- 学习内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 学习地图页面 -->
+        <div id="learning-map-page" class="page">
+            <div id="learningMapContainer" class="max-w-7xl mx-auto px-4 py-8">
+                <!-- 学习地图内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 游戏中心页面 -->
+        <div id="game-center-page" class="page">
+            <div id="gameCenterContainer" class="max-w-6xl mx-auto px-4 py-8">
+                <!-- 游戏中心内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 卡片收集页面 -->
+        <div id="cards-page" class="page">
+            <div id="cardsContainer" class="max-w-6xl mx-auto px-4 py-8">
+                <!-- 卡片收集内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 签到页面 -->
+        <div id="checkin-page" class="page">
+            <div id="checkinContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 签到内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 成就页面 -->
+        <div id="achievement-page" class="page">
+            <div id="achievementContainer" class="max-w-6xl mx-auto px-4 py-8">
+                <!-- 成就内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 转盘页面 -->
+        <div id="wheel-page" class="page">
+            <div id="wheelContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 转盘内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 刮刮卡页面 -->
+        <div id="scratch-page" class="page">
+            <div id="scratchContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 刮刮卡内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 吉祥物页面 -->
+        <div id="mascot-page" class="page">
+            <div id="mascotContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 吉祥物内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 挑战页面 -->
+        <div id="challenge-page" class="page">
+            <div id="challengeContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 挑战内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 每日任务页面 -->
+        <div id="daily-task-page" class="page">
+            <div id="dailyTaskContainer" class="max-w-4xl mx-auto px-4 py-8">
+                <!-- 每日任务内容将通过JS动态生成 -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 页脚签名 -->
+    <footer class="text-center py-8 mt-12">
+        <p class="text-gray-600">
+            由 <a href="https://with.woa.com/" style="color: #8A2BE2;" target="_blank">with</a> 通过自然语言生成
+        </p>
+    </footer>
+
+    <!-- 加载JavaScript -->
+    <script src="./app.js"></script>
+</body>
+</html>
