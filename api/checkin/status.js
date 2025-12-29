@@ -50,11 +50,11 @@ module.exports = function handler(req, res) {
 
   // 签到奖励配置
   const rewards = [
-    { day: 1, points: 10, name: '10积分' },
-    { day: 3, points: 30, name: '30积分' },
-    { day: 7, points: 100, name: '100积分 + 稀有卡片' },
-    { day: 14, points: 200, name: '200积分 + 史诗卡片' },
-    { day: 30, points: 500, name: '500积分 + 传说卡片' }
+    { day: 1, points: 10, name: '10积分', claimed: streak >= 1 },
+    { day: 3, points: 30, name: '30积分', claimed: streak >= 3 },
+    { day: 7, points: 100, name: '100积分 + 稀有卡片', claimed: streak >= 7 },
+    { day: 14, points: 200, name: '200积分 + 史诗卡片', claimed: streak >= 14 },
+    { day: 30, points: 500, name: '500积分 + 传说卡片', claimed: streak >= 30 }
   ];
 
   res.status(200).json({

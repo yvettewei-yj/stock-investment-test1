@@ -7101,10 +7101,33 @@ const CheckinModule = {
     },
 
     generateCalendarDays(calendar) {
-        if (!calendar || calendar.length === 0) return '';
+        if (!calendar || !Array.isArray(calendar) || calendar.length === 0) {
+            // 如果没有日历数据，生成一个空的日历
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay();
+            
+            let html = '';
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div></div>';
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = day === today.getDate();
+                html += `
+                    <div class="text-center py-2 rounded-lg ${isToday ? 'ring-2 ring-orange-400' : ''} bg-gray-100">
+                        <span class="font-medium">${day}</span>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
         
         // 获取本月第一天是星期几
-        const firstDay = new Date(calendar[0].date);
+        const firstDay = calendar[0]?.date ? new Date(calendar[0].date) : new Date();
         const startWeekday = new Date(firstDay.getFullYear(), firstDay.getMonth(), 1).getDay();
         
         // 填充空白格子
@@ -7114,12 +7137,12 @@ const CheckinModule = {
         }
         
         calendar.forEach(day => {
-            const isToday = day.is_today;
-            const isChecked = day.checked;
+            const isToday = day.is_today || false;
+            const isChecked = day.checked || false;
             html += `
                 <div class="text-center py-2 rounded-lg ${isToday ? 'ring-2 ring-orange-400' : ''} 
                             ${isChecked ? 'bg-gradient-to-br from-green-400 to-green-500 text-white' : 'bg-gray-100'}">
-                    <span class="font-medium">${day.day}</span>
+                    <span class="font-medium">${day.day || ''}</span>
                     ${isChecked ? '<span class="block text-xs">✓</span>' : ''}
                 </div>
             `;
@@ -8587,26 +8610,26 @@ const MascotModule = {
 
                 <!-- 吉祥物展示 -->
                 <div class="bg-gradient-to-br from-pink-100 to-rose-100 rounded-3xl shadow-xl p-8 mb-6 text-center">
-                    <div class="text-9xl mb-4 animate-bounce-slow" id="mascotDisplay">${mascot.icon}</div>
-                    <h2 class="text-3xl font-bold text-gray-800 mb-2">${mascot.name}</h2>
-                    <p class="text-lg text-pink-600 font-medium">Lv.${mascot.level}</p>
+                    <div class="text-9xl mb-4 animate-bounce-slow" id="mascotDisplay">${mascot.icon || '🥚'}</div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">${mascot.name || '新手蛋'}</h2>
+                    <p class="text-lg text-pink-600 font-medium">Lv.${mascot.level || 1}</p>
                     
                     <!-- 经验条 -->
                     <div class="max-w-xs mx-auto mt-6">
                         <div class="flex justify-between text-sm text-gray-600 mb-1">
                             <span>经验值</span>
-                            <span>${mascot.exp} / ${mascot.exp_to_next}</span>
+                            <span>${mascot.exp || 0} / ${mascot.exp_to_next || mascot.next_level_exp || 100}</span>
                         </div>
                         <div class="w-full bg-white rounded-full h-4 shadow-inner">
                             <div class="bg-gradient-to-r from-pink-400 to-rose-500 h-4 rounded-full transition-all duration-500" 
-                                 style="width: ${Math.min(mascot.exp / mascot.exp_to_next * 100, 100)}%"></div>
+                                 style="width: ${Math.min(((mascot.exp || 0) / (mascot.exp_to_next || mascot.next_level_exp || 100)) * 100, 100)}%"></div>
                         </div>
                     </div>
 
                     ${mascot.can_evolve ? `
                         <button onclick="MascotModule.evolve()" 
                                 class="mt-6 px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg animate-pulse">
-                            ✨ 进化为 ${mascot.next_stage_icon}
+                            ✨ 进化为 ${mascot.next_stage_icon || '🐣'}
                         </button>
                     ` : ''}
                 </div>
@@ -8614,9 +8637,9 @@ const MascotModule = {
                 <!-- 吉祥物对话 -->
                 <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
                     <div class="flex items-start gap-4">
-                        <div class="text-4xl">${mascot.icon}</div>
+                        <div class="text-4xl">${mascot.icon || '🥚'}</div>
                         <div class="flex-1 bg-gray-100 rounded-2xl p-4">
-                            <p class="text-gray-700" id="mascotSpeech">${messages[0]}</p>
+                            <p class="text-gray-700" id="mascotSpeech">${displayMessages[0] || '今天也要好好学习哦～'}</p>
                         </div>
                     </div>
                 </div>
