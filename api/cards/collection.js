@@ -1,7 +1,7 @@
 // API: /api/cards/collection
 // 获取用户卡片收集情况
 
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
