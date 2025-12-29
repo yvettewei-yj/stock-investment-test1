@@ -8234,12 +8234,27 @@ const CardModule = {
             });
 
             if (response.success) {
+                // 显示合成成功动画
+                this.showComposeSuccess(response.card);
+                
                 Utils.showToast(`🎉 合成成功！获得${response.card.rarity_info.name}卡片！`);
+                
                 if (response.card.rarity === 'legendary') {
-                    QuizModule.triggerCelebration && QuizModule.triggerCelebration();
+                    // 传说卡片特效
+                    if (CheckinModule && CheckinModule.triggerConfetti) {
+                        CheckinModule.triggerConfetti();
+                    }
+                    // 触发金色粒子特效
+                    this.triggerLegendaryEffect();
+                } else if (response.card.rarity === 'epic') {
+                    // 史诗卡片特效
+                    this.triggerEpicEffect();
                 }
+                
                 // 重新渲染卡片页面
-                await this.render();
+                setTimeout(() => {
+                    this.render();
+                }, 2000);
             } else {
                 Utils.showToast(response.message || '合成失败');
             }
@@ -8247,6 +8262,80 @@ const CardModule = {
             console.error('合成失败:', e);
             Utils.showToast('合成失败，请重试');
         }
+    },
+
+    showComposeSuccess(card) {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
+        overlay.onclick = () => overlay.remove();
+        
+        overlay.innerHTML = `
+            <div class="bg-white rounded-3xl p-8 max-w-sm mx-4 text-center animate-scale-in" onclick="event.stopPropagation()">
+                <div class="text-6xl mb-4 animate-bounce">✨</div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">合成成功！</h2>
+                <div class="bg-gradient-to-r ${card.rarity_info.color}20 rounded-xl p-6 mb-4 border-2" style="border-color: ${card.rarity_info.color}">
+                    <div class="text-5xl mb-2">${this.getCardEmoji(card.sector)}</div>
+                    <p class="text-lg font-bold" style="color: ${card.rarity_info.color}">${card.rarity_info.name}卡片</p>
+                    <p class="text-gray-700 mt-2">${card.stock_name}</p>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition">
+                    确定
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+    },
+
+    triggerLegendaryEffect() {
+        // 金色粒子爆炸
+        for (let i = 0; i < 100; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'fixed w-3 h-3 rounded-full z-50';
+            particle.style.background = 'linear-gradient(135deg, #f59e0b, #fbbf24)';
+            particle.style.left = '50%';
+            particle.style.top = '50%';
+            particle.style.boxShadow = '0 0 10px #f59e0b';
+            
+            const angle = (i / 100) * Math.PI * 2;
+            const distance = 100 + Math.random() * 200;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            
+            particle.animate([
+                { transform: 'translate(-50%, -50%) scale(0)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(1)`, opacity: 0 }
+            ], {
+                duration: 1000 + Math.random() * 500,
+                easing: 'cubic-bezier(0, 0.5, 0.5, 1)'
+            });
+            
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 1500);
+        }
+    },
+
+    triggerEpicEffect() {
+        // 紫色光环
+        const ring = document.createElement('div');
+        ring.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40';
+        ring.style.width = '0';
+        ring.style.height = '0';
+        ring.style.borderRadius = '50%';
+        ring.style.border = '4px solid #8b5cf6';
+        ring.style.boxShadow = '0 0 30px #8b5cf6';
+        
+        ring.animate([
+            { width: '0', height: '0', opacity: 1 },
+            { width: '400px', height: '400px', opacity: 0 }
+        ], {
+            duration: 800,
+            easing: 'ease-out'
+        });
+        
+        document.body.appendChild(ring);
+        setTimeout(() => ring.remove(), 800);
     }
 };
 
@@ -8260,18 +8349,31 @@ const ScratchCardModule = {
 
     async openBox() {
         try {
+            // 检查是否有足够的积分（如果需要）
+            const cost = 0; // 免费开箱
+            if (cost > 0 && (AppState.points || 0) < cost) {
+                Utils.showToast(`积分不足，需要${cost}积分`);
+                return;
+            }
+
             const response = await Utils.apiRequest(`/cards/open-box?user_id=${AppState.userId}`, {
                 method: 'POST'
             });
 
             if (!response.success) {
-                Utils.showToast('开箱失败');
+                Utils.showToast(response.message || '开箱失败');
                 return;
+            }
+
+            // 扣除积分（如果需要）
+            if (cost > 0) {
+                AppState.points = (AppState.points || 0) - cost;
             }
 
             this.showBoxAnimation(response.card);
         } catch (e) {
             console.error('开箱失败:', e);
+            Utils.showToast('开箱失败，请重试');
         }
     },
 
@@ -8588,22 +8690,62 @@ const MascotModule = {
         }
     },
 
-    interact(type) {
+    async interact(type) {
         const display = document.getElementById('mascotDisplay');
         const speech = document.getElementById('mascotSpeech');
         
+        if (!display || !speech) return;
+
+        const messages = {
+            pet: ['好舒服呀～开心！', '被摸摸好幸福～', '再来一次嘛～', '最喜欢被摸摸了！'],
+            play: ['太好玩啦！再来再来！', '好开心呀～', '还想继续玩！', '太有趣了！']
+        };
+
         if (type === 'pet') {
             display.classList.add('animate-wiggle');
-            speech.textContent = '好舒服呀～开心！';
+            speech.textContent = messages.pet[Math.floor(Math.random() * messages.pet.length)];
             setTimeout(() => display.classList.remove('animate-wiggle'), 1000);
         } else if (type === 'play') {
             display.classList.add('animate-jump');
-            speech.textContent = '太好玩啦！再来再来！';
+            speech.textContent = messages.play[Math.floor(Math.random() * messages.play.length)];
             setTimeout(() => display.classList.remove('animate-jump'), 1000);
         }
         
         // 增加经验
-        this.feed(5);
+        await this.feed(5);
+        
+        // 更新经验条显示
+        if (this.mascotData) {
+            const expBar = document.querySelector('#mascotContainer .bg-gradient-to-r');
+            if (expBar && this.mascotData.exp_to_next) {
+                const expProgress = Math.min((this.mascotData.exp / this.mascotData.exp_to_next) * 100, 100);
+                expBar.style.width = expProgress + '%';
+            }
+        }
+    },
+
+    async evolve() {
+        if (!this.mascotData || !this.mascotData.can_evolve) {
+            Utils.showToast('当前还不能进化哦～');
+            return;
+        }
+
+        try {
+            const response = await Utils.apiRequest(`/mascot/evolve?user_id=${AppState.userId}`, {
+                method: 'POST'
+            });
+
+            if (response.success) {
+                this.showEvolutionAnimation(response.new_icon || '🐥');
+                this.mascotData = response.mascot;
+                await this.render();
+            } else {
+                Utils.showToast(response.message || '进化失败');
+            }
+        } catch (e) {
+            console.error('进化失败:', e);
+            Utils.showToast('进化失败，请重试');
+        }
     },
 
     showEvolutionAnimation(newIcon) {
@@ -8779,6 +8921,15 @@ const ChallengeModule = {
     async submit() {
         clearInterval(this.timer);
         
+        // 如果还有未答的题目，自动提交空答案
+        const totalQuestions = this.questions.length;
+        for (let i = 0; i < totalQuestions; i++) {
+            const question = this.questions[i];
+            if (!(question.id in this.answers)) {
+                this.answers[question.id] = -1; // -1 表示未答
+            }
+        }
+        
         try {
             const response = await Utils.apiRequest('/challenge/submit?user_id=' + AppState.userId, {
                 method: 'POST',
@@ -8786,11 +8937,15 @@ const ChallengeModule = {
             });
 
             if (response.success) {
-                AppState.points += response.points_earned;
+                AppState.points = (AppState.points || 0) + response.points_earned;
+                AppState.todayPoints = (AppState.todayPoints || 0) + response.points_earned;
                 this.showResult(response);
+            } else {
+                Utils.showToast(response.message || '提交失败');
             }
         } catch (e) {
             console.error('提交失败:', e);
+            Utils.showToast('提交失败，请重试');
         }
     },
 
