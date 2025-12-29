@@ -9137,7 +9137,7 @@ const LearningMapModule = {
                     </div>
                     <div class="w-px h-12 bg-gray-200"></div>
                     <div class="text-center">
-                        <p class="text-3xl font-bold text-purple-500">${Math.round(completedCount / totalCount * 100)}%</p>
+                        <p class="text-3xl font-bold text-purple-500">${totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0}%</p>
                         <p class="text-sm text-gray-500">完成率</p>
                     </div>
                 </div>
